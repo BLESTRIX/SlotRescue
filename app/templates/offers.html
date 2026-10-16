@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status, empty, pagination with context %}
+{% block title %}Your offers{% endblock %}
+{% block content %}
+  <span class="eyebrow">YOUR CHANCE TO MOVE UP</span>
+  <h1 class="mt-2">Openings, just for you.</h1>
+  <p class="text-secondary">Review your appointment offers and their acceptance deadlines.</p>
+  {% for offer in result['items'] %}
+    {% set slot = slot_map[offer.slot_id] %}
+    <article class="appointment-card">
+      <div class="date-tile">
+        <strong>{{ slot.starts_at|local("%d") }}</strong>
+        <span>{{ slot.starts_at|local("%b") }}</span>
+      </div>
+      <div class="flex-grow-1">
+        <h2 class="h5">{{ service_map[slot.service_id].name }}</h2>
+        <p class="text-secondary">{{ slot.starts_at|local }} · Offer deadline {{ offer.expires_at|local }}</p>
+        {{ status(offer.state) }}
+      </div>
+      <a class="btn btn-primary btn-sm" href="/offers/{{ offer.id }}">Review offer →</a>
+    </article>
+  {% else %}{{ empty('No offers just yet', 'When a matching time opens up, your offer will appear here. We’ll also send you an email.') }}{% endfor %}{{ pagination(result) }}{% endblock %}

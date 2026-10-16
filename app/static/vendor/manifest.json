@@ -1,0 +1,34 @@
+{
+  "swagger-ui-bundle.js": {
+    "source": "https://raw.githubusercontent.com/swagger-api/swagger-ui/v5.31.0/dist/swagger-ui-bundle.js",
+    "sha256": "93b7b0862a80e2786f85b560be7693c2344354ffa7e7e224f850a54349724c31"
+  },
+  "swagger-ui.css": {
+    "source": "https://raw.githubusercontent.com/swagger-api/swagger-ui/v5.31.0/dist/swagger-ui.css",
+    "sha256": "9e576f8322132c76949da47f9bb53c891373c303ea3a761ff548ffc9de50a98c"
+  },
+  "swagger-LICENSE": {
+    "source": "https://raw.githubusercontent.com/swagger-api/swagger-ui/v5.31.0/LICENSE",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "bootstrap.min.css": {
+    "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.8/dist/css/bootstrap.min.css",
+    "sha256": "d85327d99c7a3ee1f9b5d0500d1370acea3ad2db39c163c2f51f232baedbdede"
+  },
+  "bootstrap.bundle.min.js": {
+    "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.8/dist/js/bootstrap.bundle.min.js",
+    "sha256": "e4fd49181388c48ec5040bd3fe66f57c29c8e67fcd8502b3354b96ec7ab47cc7"
+  },
+  "bootstrap-LICENSE": {
+    "source": "https://raw.githubusercontent.com/twbs/bootstrap/v5.3.8/LICENSE",
+    "sha256": "4620c84ad5ce8602ff65640ed6b7c8b78ebb9e036584f0ebc1ccc88206a4bb51"
+  },
+  "htmx.min.js": {
+    "source": "https://raw.githubusercontent.com/bigskysoftware/htmx/v2.0.8/dist/htmx.min.js",
+    "sha256": "22283ef68cb7545914f0a88a1bdedc7256a703d1d580c1d255217d0a50d31313"
+  },
+  "htmx-LICENSE": {
+    "source": "https://raw.githubusercontent.com/bigskysoftware/htmx/v2.0.8/LICENSE",
+    "sha256": "d3d2456f76414f2456104660ebd65aff1c04cd7966b942bdabd63f3cdb316a38"
+  }
+}

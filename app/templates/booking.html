@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status, hidden with context %}
+{% block title %}Appointment #{{ booking.id }}{% endblock %}
+{% block content %}
+  <div class="narrow mx-auto">
+    <a href="{{ '/staff/bookings' if user.role == 'STAFF' else '/dashboard' }}"
+       class="small">← All appointments</a>
+    <div class="surface p-4 p-md-5 mt-4">
+      <span class="eyebrow">APPOINTMENT #{{ booking.id }}</span>
+      <h1 class="h2 mt-3">{{ service.name }}</h1>
+      {{ status(booking.state) }}
+      <dl class="detail-list mt-4">
+        <dt>When</dt>
+        <dd>
+          {{ slot.starts_at|local }} – {{ slot.ends_at|local("%H:%M") }}
+        </dd>
+        <dt>With</dt>
+        <dd>
+          {{ member.name }}
+        </dd>
+        <dt>Duration</dt>
+        <dd>
+          {{ ((slot.ends_at-slot.starts_at).total_seconds()/60)|int }} minutes
+        </dd>
+        <dt>Timezone</dt>
+        <dd>
+          {{ timezone }}
+        </dd>
+        <dt>Booked through</dt>
+        <dd>
+          {{ 'Waitlist offer' if booking.source == 'WAITLIST' else 'Direct booking' }}
+        </dd>
+      </dl>
+      <div id="feedback" aria-live="polite"></div>
+      {% if booking.state == "CONFIRMED" and (future or user.role == "STAFF") %}
+        <details class="mt-4 border-top pt-4">
+          <summary class="text-danger">Cancel this appointment</summary>
+          <p class="text-secondary mt-3">Canceling releases this time to the waitlist. This appointment will stay in your history.</p>
+          <form method="post"
+                action="/actions/cancel/{{ booking.id }}"
+                hx-post="/actions/cancel/{{ booking.id }}"
+                hx-target="#feedback">
+            {{ hidden(csrf) }}<button class="btn btn-danger"
+        hx-disabled-elt="this">Confirm cancellation</button>
+          </form>
+        </details>
+      {% elif booking.state == "CANCELED" %}
+        <p class="text-secondary border-top pt-4">Canceled {{ booking.canceled_at|local }}.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

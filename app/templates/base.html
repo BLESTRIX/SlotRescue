@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+          content="Book your next appointment. Let the right opening find you.">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <title>{% block title %}SlotRescue{% endblock %} · Appointments, recovered</title>
+    <link rel="stylesheet" href="/static/vendor/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/vendor/htmx.min.js" defer></script>
+    <script src="/static/vendor/bootstrap.bundle.min.js" defer></script>
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <nav class="navbar navbar-expand-lg border-bottom"
+         aria-label="Main navigation">
+      <div class="container">
+        <a class="navbar-brand" href="/">
+          <span class="brand-mark" aria-hidden="true">s<span>r</span>
+          </span> SlotRescue<span class="brand-dot">.</span>
+        </a>
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navigation"
+                aria-controls="navigation"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navigation">
+          <div class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
+            <a class="nav-link" href="/slots">Find an appointment</a>
+            {% if user %}
+              {% if user.role == "STAFF" %}
+                <a class="nav-link" href="/staff">Staff workspace</a>
+              {% else %}
+                <a class="nav-link" href="/dashboard">My appointments</a>
+                <a class="nav-link" href="/waitlist">Waitlist</a>
+                <a class="nav-link" href="/offers">Offers</a>
+              {% endif %}
+              <form method="post" action="/logout">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <button class="btn btn-outline-dark btn-sm">Sign out</button>
+              </form>
+            {% else %}
+              <a class="nav-link" href="/login">Sign in</a>
+              <a class="btn btn-primary btn-sm"
+                 href="/register">Create an account <span aria-hidden="true">↗</span>
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </nav>
+    {% if user and user.role == "STAFF" %}
+      <div class="staff-nav border-bottom">
+        <nav class="container d-flex gap-3 overflow-auto py-3"
+             aria-label="Staff sections">
+          {% for path, label in [('','Overview'),('/services','Services'),('/slots','Slots'),('/bookings','Bookings'),('/waitlist','Waitlist'),('/offers','Offers'),('/jobs','Jobs'),('/audit','Audit history')] %}
+            <a class="{% if request.url.path == '/staff' ~ path %}active{% endif %}"
+               href="/staff{{ path }}">{{ label }}</a>
+          {% endfor %}
+        </nav>
+      </div>
+    {% endif %}
+    <main id="main" class="container py-5">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="border-top mt-5">
+      <div class="container py-4 d-flex justify-content-between flex-wrap gap-2">
+        <span>SlotRescue <span class="text-secondary">· Make room for what’s next.</span>
+        </span>
+        <span class="small text-secondary">All appointment times in {{ timezone }} <a href="/docs"
+    class="ms-3">API docs</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

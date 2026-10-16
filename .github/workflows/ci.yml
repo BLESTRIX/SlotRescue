@@ -1,0 +1,38 @@
+name: Checks
+on: [push, pull_request]
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: slotrescue
+          POSTGRES_PASSWORD: slotrescue
+          POSTGRES_DB: slotrescue_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U slotrescue -d slotrescue_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://slotrescue:slotrescue@127.0.0.1:5432/slotrescue_test
+      REQUIRE_POSTGRES_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.26"
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run djlint app/templates --check
+      - run: uv run pytest --cov=app --cov-report=xml
+      - name: Check migration drift
+        env:
+          DATABASE_URL: postgresql+psycopg://slotrescue:slotrescue@127.0.0.1:5432/slotrescue_test
+        run: uv run alembic check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml

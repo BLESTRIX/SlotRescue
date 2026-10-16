@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status, empty, pagination with context %}
+{% block title %}My appointments{% endblock %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">YOUR DAY, YOUR WAY</span>
+      <h1 class="mt-2">Hello, {{ user.name }}.</h1>
+      <p class="text-secondary">A little space for everything you’ve got planned.</p>
+    </div>
+    <a class="btn btn-primary" href="/slots">Book an appointment ↗</a>
+  </div>
+  {% if offers["items"] %}
+    <section class="offer-banner my-4">
+      <span class="eyebrow">AN OPENING FOR YOU</span>
+      <h2 class="h4 mt-2">Your wait might be over.</h2>
+      <p>You have {{ offers.total }} offer{{ '' if offers.total == 1 else 's' }} to review. Each has a limited acceptance window.</p>
+      <a href="/offers" class="btn btn-dark btn-sm">Review your offers →</a>
+    </section>
+  {% endif %}
+  <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+    <h2 class="h4">Your appointments</h2>
+    <a href="/waitlist">Manage waitlist ↗</a>
+  </div>
+  {% for b in result['items'] %}
+    {% set slot = slot_map[b.slot_id] %}
+    <article class="appointment-card">
+      <div class="date-tile">
+        <strong>{{ slot.starts_at|local("%d") }}</strong>
+        <span>{{ slot.starts_at|local("%b") }}</span>
+      </div>
+      <div class="flex-grow-1">
+        <h3 class="h5">{{ service_map[slot.service_id].name }}</h3>
+        <p class="mb-2 text-secondary">{{ slot.starts_at|local }} {% if b.source == "WAITLIST" %}· Recovered through your waitlist{% endif %}
+        </p>
+        {{ status(b.state) }}
+      </div>
+      <a class="btn btn-outline-dark btn-sm" href="/bookings/{{ b.id }}">View appointment →</a>
+    </article>
+{% else %}{{ empty('Your next appointment belongs here', 'Browse the available services and find a little time for yourself.') }}{% endfor %}{{ pagination(result) }}
+{% endblock %}

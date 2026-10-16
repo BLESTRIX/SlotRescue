@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status, empty with context %}
+{% block title %}Staff overview{% endblock %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">THE STAFF WORKSPACE</span>
+      <h1 class="mt-2">Keep good time.</h1>
+      <p class="text-secondary">Appointments, openings, and the people waiting for them.</p>
+    </div>
+    <a class="btn btn-primary" href="/staff/slots">Create a slot ↗</a>
+  </div>
+  <form class="filter-bar row g-3 align-items-end my-4" method="get">
+    <div class="col-sm-4">
+      <label class="form-label" for="start">From (inclusive)</label>
+      <input class="form-control"
+             type="date"
+             name="start"
+             id="start"
+             value="{{ start }}"
+             required>
+    </div>
+    <div class="col-sm-4">
+      <label class="form-label" for="end">To (exclusive)</label>
+      <input class="form-control"
+             type="date"
+             name="end"
+             id="end"
+             value="{{ end }}"
+             required>
+    </div>
+    <div class="col-sm-4">
+      <button class="btn btn-outline-dark w-100">Update metrics</button>
+    </div>
+  </form>
+  <div class="row g-3">
+    {% for key,label,note in [('upcoming_confirmed','Upcoming bookings','Appointment start in range'),('cancellations','Cancellations','Cancellation time in range'),('active_waitlist','Active waitlist','Entry created in range'),('active_offers','Live offers','Offer created in range'),('recovered_bookings','Recovered bookings','Confirmed; appointment start in range')] %}
+      <div class="col-sm-6 col-xl">
+        <div class="metric-card {% if key == 'recovered_bookings' %}metric-highlight{% endif %}">
+          <span class="small">{{ label }}</span>
+          <strong>{{ metrics[key] }}</strong>
+          <p class="small mb-1">{{ note }}</p>
+          <span class="metric-range">{{ start }} → {{ end }}
+            <br>
+          {{ timezone }}</span>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+    <h2 class="h4">Recent appointments</h2>
+    <a href="/staff/bookings">View all →</a>
+  </div>
+  {% for b in result['items'] %}
+    {% set slot = slot_map[b.slot_id] %}
+    <article class="appointment-card">
+      <div class="date-tile">
+        <strong>{{ slot.starts_at|local("%d") }}</strong>
+        <span>{{ slot.starts_at|local("%b") }}</span>
+      </div>
+      <div class="flex-grow-1">
+        <h3 class="h5">{{ service_map[slot.service_id].name }}</h3>
+        <p class="mb-0 text-secondary">{{ customer_map[b.customer_id].name }} · {{ slot.starts_at|local }}</p>
+      </div>
+      {{ status(b.state) }}<a class="btn btn-outline-dark btn-sm"
+   href="/bookings/{{ b.id }}">Details →</a>
+    </article>
+{% else %}{{ empty('A clear calendar, for now', 'Create services and appointment slots to open your doors.') }}{% endfor %}
+<aside class="offer-banner mt-5">
+  <h2 class="h5">Recovery keeps moving in the background.</h2>
+  <p class="mb-2">Canceled slots go to the earliest matching waitlist request. Declined or expired offers move to the next eligible customer.</p>
+  <a href="/staff/jobs">Check background work →</a>
+  </aside>
+{% endblock %}

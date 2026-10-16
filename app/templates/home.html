@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row align-items-center hero g-5">
+    <div class="col-lg-6">
+      <span class="eyebrow">
+        <span class="live-dot"></span> A better way to make time</span>
+      <h1 class="display-2 mt-4">
+        Good things
+        <br>
+        come to those
+        <br>
+        who <em>don’t wait.</em>
+      </h1>
+      <p class="lead mt-4 text-secondary pe-lg-5">Find your next appointment. And when life changes someone else’s plans, get your chance to move up.</p>
+      <div class="d-flex gap-3 mt-4">
+        <a class="btn btn-primary btn-lg"
+           href="/slots">Find an appointment <span aria-hidden="true">↗</span>
+        </a>
+        <a class="btn btn-outline-dark btn-lg" href="/waitlist">Join the waitlist</a>
+      </div>
+      <p class="small text-secondary mt-4">A real opening. A fair queue. A little time back.</p>
+    </div>
+    <div class="col-lg-6">
+      <div class="hero-board">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+          <span class="eyebrow">YOUR TIME, WELL SPENT</span>
+          <span class="rounded-pill bg-white px-3 py-2 small">✳ SlotRescue</span>
+        </div>
+        <div class="demo-card">
+          <span class="small text-secondary">HOW CANCELLATION RECOVERY WORKS</span>
+          <h2 class="h3 mt-3">
+            A change of plans.
+            <br>
+            A new possibility.
+          </h2>
+          <div class="timeline mt-4">
+            <div>
+              <span class="timeline-dot">1</span>
+              <strong>An appointment opens</strong>
+              <p>A canceled booking makes room.</p>
+            </div>
+            <div>
+              <span class="timeline-dot">2</span>
+              <strong>The first match gets an offer</strong>
+              <p>Service, time, and staff preferences checked.</p>
+            </div>
+            <div>
+              <span class="timeline-dot">3</span>
+              <strong>Your next appointment, secured</strong>
+              <p>Accept before the offer expires.</p>
+            </div>
+          </div>
+        </div>
+        <div class="board-note">
+          <span aria-hidden="true">↗</span> Less waiting. More living.
+        </div>
+      </div>
+    </div>
+  </div>
+  <section class="py-5 mt-4">
+    <div class="section-heading">
+      <span class="eyebrow">THOUGHTFULLY SIMPLE</span>
+      <h2 class="mt-3">Your plans have a place here.</h2>
+    </div>
+    <div class="row g-4 mt-2">
+      {% for n,title,copy in [('01','Book with confidence','Choose a service, a time, and a staff member. Your confirmation keeps the details in one place.'),('02','Let an opening find you','Tell us when you’re free. We’ll offer a matching appointment in the order customers joined.'),('03','Stay in control','Accept, decline, or leave the waitlist whenever your plans change. Every offer has a clear deadline.')] %}
+        <div class="col-md-4">
+          <article class="feature">
+            <span class="feature-number">{{ n }}</span>
+            <h3 class="h5 mt-4">{{ title }}</h3>
+            <p class="text-secondary">{{ copy }}</p>
+          </article>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

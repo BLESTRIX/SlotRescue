@@ -1,0 +1,87 @@
+name: slotrescue
+x-app: &app
+  build: .
+  environment: &environment
+    APP_ENV: ${APP_ENV:-development}
+    DATABASE_URL: postgresql+psycopg://slotrescue:${DATABASE_PASSWORD:-slotrescue}@db:5432/slotrescue
+    REDIS_URL: redis://redis:6379/0
+    BUSINESS_TIMEZONE: ${BUSINESS_TIMEZONE:-Asia/Karachi}
+    OFFER_LIFETIME_SECONDS: ${OFFER_LIFETIME_SECONDS:-900}
+    BASE_URL: ${BASE_URL:-http://localhost:8000}
+    COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    SECRET_KEY: ${SECRET_KEY:-development-only-change-before-production-32-characters}
+    SMTP_HOST: mailpit
+    SMTP_PORT: 1025
+  init: true
+  stop_grace_period: 30s
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: slotrescue
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-slotrescue}
+      POSTGRES_DB: slotrescue
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U slotrescue -d slotrescue"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  mailpit:
+    image: axllent/mailpit:v1.29.2
+    ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db: {condition: service_healthy}
+  web:
+    <<: *app
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  worker:
+    <<: *app
+    command: ["celery", "-A", "app.tasks.celery_app:celery", "worker", "--loglevel=INFO", "--concurrency=2"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      mailpit: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app:celery inspect ping --destination celery@$$HOSTNAME --timeout 5"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  beat:
+    <<: *app
+    command: ["celery", "-A", "app.tasks.celery_app:celery", "beat", "--loglevel=INFO", "--schedule=/tmp/slotrescue-beat"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/tmp/slotrescue-beat'); assert p.exists() and time.time()-p.stat().st_mtime < 360"]
+      interval: 60s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+volumes:
+  pgdata:

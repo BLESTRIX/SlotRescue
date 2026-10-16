@@ -1,0 +1,26 @@
+{% if error %}
+  <div class="alert alert-danger" role="alert">
+    <strong>{{ error.message }}</strong>
+    {% if error.details %}
+      <ul class="mb-0 mt-2">
+        {% for detail in error.details %}
+          <li>{{ detail.field }}: {{ detail.message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if error.code == "slot_unavailable" %}
+      <p class="mb-0 mt-2">
+        <a href="/slots">Refresh available appointments</a> or <a href="/waitlist">join the waitlist</a>.
+      </p>
+    {% elif error.code == "unauthenticated" %}
+      <p class="mb-0 mt-2">
+        <a href="/login">Sign in to continue</a>
+      </p>
+    {% endif %}
+    <small class="d-block mt-2 text-secondary">Reference: {{ error.request_id }}</small>
+  </div>
+{% else %}
+  <div class="alert alert-success" role="status">
+    {{ success }} <a href="{{ target }}">Continue →</a>
+  </div>
+{% endif %}

@@ -1,0 +1,55 @@
+[project]
+name = "slotrescue"
+version = "0.1.0"
+description = "Appointment booking and fair cancellation recovery"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic==1.20.0",
+    "argon2-cffi==25.1.0",
+    "celery[redis]==5.6.3",
+    "email-validator==2.3.0",
+    "fastapi==0.143.2",
+    "httpx==0.28.1",
+    "jinja2==3.1.6",
+    "psycopg[binary]==3.3.6",
+    "pydantic==2.14.1",
+    "pydantic-settings==2.16.0",
+    "python-multipart==0.0.32",
+    "sqlalchemy==2.0.54",
+    "tzdata==2026.5",
+    "uvicorn[standard]==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "djlint==1.46.6",
+    "playwright==1.64.0",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.17.1",
+]
+
+[tool.ruff]
+extend-exclude = [".uv-cache", ".runtime", ".tools"]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008", "E501"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["integration: requires PostgreSQL", "concurrency: uses separate PostgreSQL connections"]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.djlint]
+profile = "jinja"
+indent = 2
+max_line_length = 100

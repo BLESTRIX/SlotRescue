@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from 'macros.html' import action, empty, pagination with context %}
+{% block title %}Find an appointment{% endblock %}
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <span class="eyebrow">A LITTLE TIME FOR YOU</span>
+      <h1 class="mt-2">Find your next appointment.</h1>
+      <p class="text-secondary">Choose a time that fits. We’ll take care of the details.</p>
+    </div>
+    <a class="btn btn-outline-dark" href="/waitlist">Can’t find a time? Join the waitlist ↗</a>
+  </div>
+  <form method="get"
+        action="/slots"
+        hx-get="/slots"
+        hx-target="#slot-results"
+        hx-select="#slot-results"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        class="filter-bar row g-3 align-items-end my-4">
+    <div class="col-md-5">
+      <label class="form-label" for="service">Service</label>
+      <select id="service" name="service_id" class="form-select">
+        <option value="">All services</option>
+        {% for s in services if s.active %}
+          <option value="{{ s.id }}"
+                  {% if s.id == service_id %}selected{% endif %}>{{ s.name }} · {{ s.duration_minutes }} min</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="day">Appointment date</label>
+      <input class="form-control"
+             id="day"
+             name="day"
+             type="date"
+             value="{{ day or '' }}">
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary w-100">
+        Find appointments <span class="htmx-indicator spinner-border spinner-border-sm"
+       aria-label="Loading"></span>
+      </button>
+    </div>
+  </form>
+  <div id="feedback" aria-live="polite"></div>
+  <section id="slot-results" aria-live="polite">
+    <div class="d-flex justify-content-between my-4">
+      <strong>{{ result.total }} available appointment{{ '' if result.total == 1 else 's' }}</strong>
+      <span class="small text-secondary">Times in {{ timezone }}</span>
+    </div>
+    {% for slot in result['items'] %}
+      <article class="appointment-card">
+        <div class="date-tile">
+          <strong>{{ slot.starts_at|local("%d") }}</strong>
+          <span>{{ slot.starts_at|local("%b") }}</span>
+        </div>
+        <div class="flex-grow-1">
+          <span class="eyebrow">{{ slot.starts_at|local("%A") }}</span>
+          <h2 class="h5 mt-1 mb-2">{{ slot.service_name }}</h2>
+          <p class="mb-0 text-secondary">{{ slot.starts_at|local("%H:%M") }} – {{ slot.ends_at|local("%H:%M") }} <span class="mx-2">·</span> {{ slot.duration_minutes }} min <span class="mx-2">·</span> {{ slot.staff_name }}</p>
+        </div>
+        {% if user and user.role == "CUSTOMER" %}{{ action('/actions/book/' ~ slot.id, 'Book this time ↗', csrf, 'primary', true) }}{% else %}
+          <a class="btn btn-primary btn-sm" href="/login">Sign in to book ↗</a>
+        {% endif %}
+      </article>
+    {% else %}{{ empty('No openings for these filters', 'Try another date or join the waitlist. We’ll offer you a time when one opens up.') }}<div class="text-center mt-3">
+      <a class="btn btn-primary" href="/waitlist">Join the waitlist</a>
+      </div>
+    {% endfor %}{{ pagination(result) }}</section>
+{% endblock %}

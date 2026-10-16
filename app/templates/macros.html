@@ -1,0 +1,41 @@
+{% macro status(value) %}
+  <span class="status status-{{ value|lower }}">{{ value|replace('_', ' ')|title }}</span>
+{% endmacro %}
+{% macro hidden(csrf, idempotent=false) %}
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  {% if idempotent %}
+    <input type="hidden" name="idempotency_key" value="{{ new_key() }}">
+  {% endif %}
+{% endmacro %}
+{% macro action(url, label, csrf, style='outline-dark', idempotent=false) %}
+  <form method="post"
+        action="{{ url }}"
+        hx-post="{{ url }}"
+        hx-target="#feedback"
+        class="d-inline">
+    {{ hidden(csrf, idempotent) }}<button class="btn btn-{{ style }} btn-sm"
+        hx-disabled-elt="this">{{ label }}</button>
+  </form>
+{% endmacro %}
+{% macro pagination(result) %}
+  {% if result.total > result.page_size %}
+    <nav aria-label="Pagination" class="d-flex align-items-center gap-3 mt-4">
+      {% if result.page > 1 %}
+        <a class="btn btn-outline-dark btn-sm"
+           href="{{ request.url.include_query_params(page=result.page-1) }}">← Previous</a>
+      {% endif %}
+      <span class="small text-secondary">Page {{ result.page }} · {{ result.total }} records</span>
+      {% if result.page * result.page_size < result.total %}
+        <a class="btn btn-outline-dark btn-sm"
+           href="{{ request.url.include_query_params(page=result.page+1) }}">Next →</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endmacro %}
+{% macro empty(title, message) %}
+  <div class="empty-state">
+    <span class="empty-symbol" aria-hidden="true">◎</span>
+    <h3 class="h5">{{ title }}</h3>
+    <p class="text-secondary mb-0">{{ message }}</p>
+  </div>
+{% endmacro %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status, action with context %}
+{% block title %}Appointment offer{% endblock %}
+{% block content %}
+  <div class="narrow mx-auto">
+    <a href="/offers" class="small">← All offers</a>
+    <div class="surface p-4 p-md-5 mt-4">
+      <span class="eyebrow">A LITTLE LESS WAITING</span>
+      <h1 class="h2 mt-3">An opening for {{ service.name }}.</h1>
+      {{ status(offer.state) }}
+      <dl class="detail-list mt-4">
+        <dt>When</dt>
+        <dd>
+          {{ slot.starts_at|local }} – {{ slot.ends_at|local("%H:%M") }}
+        </dd>
+        <dt>With</dt>
+        <dd>
+          {{ member.name }}
+        </dd>
+        <dt>Offer expires</dt>
+        <dd>
+          {{ offer.expires_at|local("%d %b %Y · %H:%M:%S") }} ({{ timezone }})
+        </dd>
+      </dl>
+      <p class="small text-secondary">{{ offer.explanation }}</p>
+      <div id="feedback" aria-live="polite"></div>
+      {% if active %}
+        <div class="countdown-box my-4">
+          <span class="small">Time to decide</span>
+          <strong class="d-block display-6"
+                  data-countdown="{{ offer.expires_at.isoformat() }}"
+                  data-server-now="{{ server_now }}"
+                  role="timer">Calculating…</strong>
+          <small>The deadline is checked when your acceptance reaches the server.</small>
+        </div>
+        <div class="d-flex gap-3 flex-wrap">{{ action('/actions/accept/' ~ offer.id, 'Accept appointment ↗', csrf, 'primary', true) }}{{ action('/actions/decline/' ~ offer.id, 'Decline offer', csrf) }}</div>
+      {% elif offer.booking_id %}
+        <a class="btn btn-primary" href="/bookings/{{ offer.booking_id }}">View your booking →</a>
+      {% else %}
+        <p class="alert alert-secondary mt-4">This offer is no longer available. Your active waitlist request remains eligible for other openings.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status, hidden, action, empty, pagination with context %}
+{% block title %}Staff · {{ section|title }}{% endblock %}
+{% block content %}
+  <span class="eyebrow">STAFF WORKSPACE</span>
+  <h1 class="mt-2">{{ 'Audit history' if section == 'audit' else 'Background jobs' if section == 'jobs' else section|title }}.</h1>
+  <p class="text-secondary">{{ {'services':'Manage your services. Deactivate a service to retain its appointment history.','slots':'Create explicit openings. Every new or edited slot checks the waitlist before becoming available.','bookings':'Find appointments, review details, and manage cancellations.','waitlist':'See who is waiting and the appointment windows that work for them.','offers':'Follow each opening from its first offer to its final response.','jobs':'Review delivery and recovery work. Failed jobs can receive a fresh retry budget.','audit':'A history of changes, including who made them and when.'}[section] }}</p>
+  <div id="feedback" aria-live="polite"></div>
+  {% if section == "services" %}
+    <details class="surface p-4 my-4" open>
+      <summary class="h5 mb-0">Create a service</summary>
+      <form class="row g-3 mt-2"
+            method="post"
+            action="/actions/create-service"
+            hx-post="/actions/create-service"
+            hx-target="#feedback">
+        {{ hidden(csrf) }}
+        <div class="col-md-5">
+          <label class="form-label" for="new-name">Service name</label>
+          <input class="form-control"
+                 id="new-name"
+                 name="name"
+                 maxlength="100"
+                 required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="new-duration">Duration (minutes)</label>
+          <input class="form-control"
+                 id="new-duration"
+                 type="number"
+                 name="duration_minutes"
+                 min="5"
+                 max="480"
+                 value="30"
+                 required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="new-description">Description</label>
+          <input class="form-control"
+                 id="new-description"
+                 name="description"
+                 maxlength="2000">
+        </div>
+        <div>
+          <button class="btn btn-primary" hx-disabled-elt="this">Create service ↗</button>
+        </div>
+      </form>
+    </details>
+    <p class="small text-secondary">A service’s duration cannot change while future slots exist. Create a new service for a new duration.</p>
+  {% elif section == "slots" %}
+    <details class="surface p-4 my-4" open>
+      <summary class="h5 mb-0">Create an appointment slot</summary>
+      <form class="row g-3 mt-2"
+            method="post"
+            action="/actions/create-slot"
+            hx-post="/actions/create-slot"
+            hx-target="#feedback">
+        {{ hidden(csrf) }}
+        <div class="col-md-4">
+          <label class="form-label" for="new-service">Service</label>
+          <select class="form-select" id="new-service" name="service_id" required>
+            {% for s in services if s.active %}
+              <option value="{{ s.id }}">{{ s.name }} · {{ s.duration_minutes }} min</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="new-staff">Staff member</label>
+          <select class="form-select" id="new-staff" name="staff_id" required>
+            {% for s in staff_members %}
+              <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" for="new-start">Start time ({{ timezone }})</label>
+          <input class="form-control"
+                 id="new-start"
+                 type="datetime-local"
+                 name="starts_at"
+                 required>
+        </div>
+        <div>
+          <button class="btn btn-primary" hx-disabled-elt="this">Create slot ↗</button>
+        </div>
+      </form>
+    </details>
+  {% endif %}
+  {% if states %}
+    <form method="get" class="filter-bar row g-3 align-items-end my-4">
+      {% if section in ["slots","bookings"] %}
+        <div class="col-md-3">
+          <label class="form-label" for="filter-day">Date</label>
+          <input class="form-control"
+                 type="date"
+                 id="filter-day"
+                 name="day"
+                 value="{{ day or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" for="filter-service">Service</label>
+          <select class="form-select" id="filter-service" name="service_id">
+            <option value="">All services</option>
+            {% for s in services %}
+              <option value="{{ s.id }}"
+                      {% if service_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="filter-staff">Staff</label>
+          <select class="form-select" id="filter-staff" name="staff_id">
+            <option value="">All staff</option>
+            {% for s in staff_members %}
+              <option value="{{ s.id }}"
+                      {% if staff_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+      <div class="col">
+        <label class="form-label" for="filter-state">Status</label>
+        <select class="form-select" id="filter-state" name="state">
+          <option value="">All statuses</option>
+          {% for option in states %}
+            <option {% if option == state %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-outline-dark">Apply filters</button>
+      </div>
+    </form>
+  {% endif %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <strong>{{ result.total }} record{{ '' if result.total == 1 else 's' }}</strong>
+    <span class="text-secondary small">{{ timezone }}</span>
+  </div>
+  {% if section == "services" %}
+    {% for s in result['items'] %}
+      <article class="surface p-4 mb-3">
+        <div class="d-flex justify-content-between">
+          <h2 class="h5">{{ s.name }}</h2>
+          {{ status('ACTIVE' if s.active else 'INACTIVE') }}
+        </div>
+        <form method="post"
+              action="/actions/update-service/{{ s.id }}"
+              hx-post="/actions/update-service/{{ s.id }}"
+              hx-target="#feedback"
+              class="row g-3 mt-1">
+          {{ hidden(csrf) }}
+          <div class="col-md-4">
+            <label class="form-label" for="name-{{ s.id }}">Name</label>
+            <input class="form-control"
+                   id="name-{{ s.id }}"
+                   name="name"
+                   value="{{ s.name }}"
+                   required>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label" for="duration-{{ s.id }}">Minutes</label>
+            <input class="form-control"
+                   id="duration-{{ s.id }}"
+                   name="duration_minutes"
+                   type="number"
+                   min="5"
+                   max="480"
+                   value="{{ s.duration_minutes }}"
+                   required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="description-{{ s.id }}">Description</label>
+            <input class="form-control"
+                   id="description-{{ s.id }}"
+                   name="description"
+                   value="{{ s.description }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label" for="active-{{ s.id }}">Status</label>
+            <select class="form-select" name="active" id="active-{{ s.id }}">
+              <option value="true" {% if s.active %}selected{% endif %}>Active</option>
+              <option value="false" {% if not s.active %}selected{% endif %}>Inactive</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-outline-dark btn-sm" hx-disabled-elt="this">Save changes</button>
+          </div>
+        </form>
+      </article>
+    {% endfor %}
+  {% else %}
+    {% for item in result['items'] %}
+      <article class="surface p-4 mb-3">
+        {% if section == "slots" %}
+          <div class="page-heading">
+            <div>
+              <h2 class="h5">{{ item.service_name }}</h2>
+              <p class="text-secondary mb-2">{{ item.starts_at|local }} – {{ item.ends_at|local("%H:%M") }} · {{ item.staff_name }}</p>
+              {{ status(item.state) }}
+            </div>
+            <span class="small text-secondary">Slot #{{ item.id }}</span>
+          </div>
+          {% if item.state in ["AVAILABLE","ALLOCATING"] %}
+            <details class="mt-3">
+              <summary class="small">Edit slot</summary>
+              <form class="row g-3 mt-1"
+                    method="post"
+                    action="/actions/update-slot/{{ item.id }}"
+                    hx-post="/actions/update-slot/{{ item.id }}"
+                    hx-target="#feedback">
+                {{ hidden(csrf) }}
+                <div class="col-md-4">
+                  <label class="form-label" for="service-{{ item.id }}">Service</label>
+                  <select class="form-select" name="service_id" id="service-{{ item.id }}">
+                    {% for s in services if s.active %}
+                      <option value="{{ s.id }}"
+                              {% if s.id == item.service_id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label" for="staff-{{ item.id }}">Staff</label>
+                  <select class="form-select" name="staff_id" id="staff-{{ item.id }}">
+                    {% for s in staff_members %}
+                      <option value="{{ s.id }}"
+                              {% if s.id == item.staff_id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label" for="start-{{ item.id }}">Start ({{ timezone }})</label>
+                  <input class="form-control"
+                         id="start-{{ item.id }}"
+                         type="datetime-local"
+                         name="starts_at"
+                         value="{{ item.starts_at|local('%Y-%m-%dT%H:%M') }}"
+                         required>
+                </div>
+                <div>
+                  <button class="btn btn-outline-dark btn-sm">Save slot</button>
+                </div>
+              </form>
+            </details>
+          {% else %}
+            <p class="form-text mb-0 mt-3">Booked and held slots cannot be edited.</p>
+          {% endif %}
+        {% elif section == "bookings" %}
+          {% set slot = slot_map[item.slot_id] %}
+          <div class="page-heading">
+            <div>
+              <h2 class="h5">{{ service_map[slot.service_id].name }} · {{ customer_map[item.customer_id].name }}</h2>
+              <p class="text-secondary">{{ slot.starts_at|local }} · {{ item.source|title }}</p>
+              {{ status(item.state) }}
+            </div>
+            <a class="btn btn-outline-dark btn-sm"
+               href="/bookings/{{ item.id }}">Details / cancel →</a>
+          </div>
+        {% elif section == "waitlist" %}
+          <div class="d-flex justify-content-between">
+            <h2 class="h5">{{ service_map[item.service_id].name }} · {{ customer_map[item.customer_id].name }}</h2>
+            {{ status(item.state) }}
+          </div>
+          <p class="text-secondary mb-0">{{ item.earliest_start|local }} → {{ item.latest_end|local }} · Entry #{{ item.id }}</p>
+          <p class="small text-secondary mb-0 mt-2">Preferred staff: {% if item.preferred_staff_id %}
+            {% for s in staff_members if s.id == item.preferred_staff_id %}{{ s.name }}{% endfor %}
+    {% else %}Anyone available{% endif %}
+      </p>
+    {% elif section == "offers" %}
+      {% set slot = slot_map[item.slot_id] %}
+      <div class="d-flex justify-content-between">
+        <h2 class="h5">{{ service_map[slot.service_id].name }} · {{ customer_map[item.customer_id].name }}</h2>
+        {{ status(item.state) }}
+      </div>
+      <p class="text-secondary">Appointment {{ slot.starts_at|local }} · Offer expires {{ item.expires_at|local }}</p>
+      <p class="small text-secondary mb-0">{{ item.explanation }}</p>
+    {% elif section == "jobs" %}
+      <div class="d-flex justify-content-between">
+        <h2 class="h5">{{ item.kind|title }} job #{{ item.id }}</h2>
+        {{ status(item.state) }}
+      </div>
+      <p class="small text-secondary mt-3">Attempts {{ item.attempts }} / {{ item.retry_limit }} · Next due {{ item.available_at|local }} · {{ item.dedupe_key }}</p>
+      {% if item.last_error %}
+        <p class="job-error">{{ item.last_error }}</p>
+      {% endif %}
+      {% if item.state == "FAILED" %}{{ action('/actions/retry-job/' ~ item.id, 'Retry job', csrf, 'primary') }}{% endif %}
+    {% elif section == "audit" %}
+      <div class="d-flex justify-content-between gap-3">
+        <h2 class="h6">{{ item.action }}</h2>
+        <span class="small text-secondary">{{ item.created_at|local }}</span>
+      </div>
+      <p class="small text-secondary mb-1">{{ item.resource_type }} #{{ item.resource_id }} · {{ 'User #' ~ item.actor_id if item.actor_id else 'Background worker' }}</p>
+      {% if item.details %}
+        <p class="small text-secondary mb-1">{{ item.details }}</p>
+      {% endif %}
+      <span class="small text-secondary">Request {{ item.request_id or '—' }}</span>
+    {% endif %}
+    </article>
+{% else %}{{ empty('Nothing to show here yet', 'Records will appear as your business starts taking appointments. Try another filter if needed.') }}{% endfor %}
+{% endif %}{{ pagination(result) }}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from 'macros.html' import status, hidden, action, empty, pagination with context %}
+{% block title %}Your waitlist{% endblock %}
+{% block content %}
+  <span class="eyebrow">LET THE RIGHT TIME FIND YOU</span>
+  <h1 class="mt-2">A place in line. Peace of mind.</h1>
+  <p class="text-secondary">Tell us when you’re free. You’ll receive one offer at a time, in the order eligible customers joined.</p>
+  <div class="row g-5 mt-2">
+    <section class="col-lg-5">
+      <div class="surface p-4">
+        <h2 class="h4">Join the waitlist</h2>
+        <p class="small text-secondary">Your full appointment must fit inside this window. Times are in {{ timezone }}.</p>
+        <div id="feedback" aria-live="polite"></div>
+        <form method="post"
+              action="/actions/join"
+              hx-post="/actions/join"
+              hx-target="#feedback">
+          {{ hidden(csrf) }}<label class="form-label" for="service">Service</label>
+          <select class="form-select mb-3" id="service" name="service_id" required>
+            {% for s in services if s.active %}
+              <option value="{{ s.id }}">{{ s.name }} · {{ s.duration_minutes }} min</option>
+            {% endfor %}
+          </select>
+          <label class="form-label" for="earliest">Earliest start</label>
+          <input id="earliest"
+                 name="earliest_start"
+                 type="datetime-local"
+                 class="form-control mb-3"
+                 required>
+          <label class="form-label" for="latest">Latest end</label>
+          <input id="latest"
+                 name="latest_end"
+                 type="datetime-local"
+                 class="form-control mb-3"
+                 required>
+          <label class="form-label" for="preferred">Preferred staff member</label>
+          <select id="preferred" name="preferred_staff_id" class="form-select mb-4">
+            <option value="">Anyone available</option>
+            {% for s in staff_members %}
+              <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary w-100" hx-disabled-elt="this">Join waitlist ↗</button>
+        </form>
+      </div>
+    </section>
+    <section class="col-lg-7">
+      <h2 class="h4 mb-4">Your requests</h2>
+      {% for entry in result['items'] %}
+        <article class="surface p-4 mb-3">
+          <div class="d-flex justify-content-between gap-2">
+            <h3 class="h5">{{ service_map[entry.service_id].name }}</h3>
+            {{ status(entry.state) }}
+          </div>
+          <p class="small text-secondary mt-3">{{ entry.earliest_start|local }} → {{ entry.latest_end|local }}</p>
+          <p class="small text-secondary">
+            {% if entry.preferred_staff_id %}
+              {% for s in staff_members if s.id == entry.preferred_staff_id %}With {{ s.name }}{% endfor %}
+      {% else %}Any staff member{% endif %} · Joined {{ entry.created_at|local }}</p>
+      {% if entry.state == "ACTIVE" %}{{ action('/actions/withdraw/' ~ entry.id, 'Withdraw request', csrf) }}{% endif %}
+        </article>
+{% else %}{{ empty('No requests yet', 'Choose your service and availability to get started.') }}{% endfor %}{{ pagination(result) }}</section>
+  </div>
+{% endblock %}
